@@ -1,92 +1,22 @@
-# Changelog
-
-## [2.3.0](https://github.com/bmish/eslint-doc-generator/compare/v2.2.2...v2.3.0) (2025-10-06)
+## [2.4.0](https://github.com/MikeMcC399/eslint-doc-generator/compare/v2.3.0...v2.4.0) (2025-10-06)
 
 
 ### Features
 
-* use Prettier to detect end of line in addition to EditorConfig ([#803](https://github.com/bmish/eslint-doc-generator/issues/803)) ([c0ad58b](https://github.com/bmish/eslint-doc-generator/commit/c0ad58bd23d459f955e40ea04e739df20730f3f2))
-
-## [2.2.2](https://github.com/bmish/eslint-doc-generator/compare/v2.2.1...v2.2.2) (2025-06-22)
-
-
-### Bug Fixes
-
-* no-op for testing release-please ([#751](https://github.com/bmish/eslint-doc-generator/issues/751)) ([ade5adf](https://github.com/bmish/eslint-doc-generator/commit/ade5adf161fc7bb9a6fbac65954370034a2d237f))
-
-## [2.2.1](https://github.com/bmish/eslint-doc-generator/compare/v2.2.0...v2.2.1) (2025-06-22)
+* add recommended-type-checked: ☑️ to preset emojis ([#518](https://github.com/MikeMcC399/eslint-doc-generator/issues/518)) ([2a49eda](https://github.com/MikeMcC399/eslint-doc-generator/commit/2a49edaca145d4ca575a36fff558fb5ec7aa670c))
+* use Prettier to detect end of line in addition to EditorConfig ([#803](https://github.com/MikeMcC399/eslint-doc-generator/issues/803)) ([c0ad58b](https://github.com/MikeMcC399/eslint-doc-generator/commit/c0ad58bd23d459f955e40ea04e739df20730f3f2))
 
 
 ### Bug Fixes
 
-* no-op for testing release-please ([#739](https://github.com/bmish/eslint-doc-generator/issues/739)) ([0492d97](https://github.com/bmish/eslint-doc-generator/commit/0492d97b56a0ffa42fdb8272b8f32c9ec7a9deca))
-* no-op for testing release-please ([#745](https://github.com/bmish/eslint-doc-generator/issues/745)) ([d40250d](https://github.com/bmish/eslint-doc-generator/commit/d40250d8d2726be423f7871916e20aa590b9386b))
-
-
-## v2.2.0 (2025-06-19)
-
-#### :rocket: Enhancement
-* [#709](https://github.com/bmish/eslint-doc-generator/pull/709) Enable flat configs ([@Hagobert](https://github.com/Hagobert))
-
-#### :bug: Bug Fix
-* [#731](https://github.com/bmish/eslint-doc-generator/pull/731) Fix csv spacing for deprecated rule replaced-by list ([@bmish](https://github.com/bmish))
-
-#### Committers: 2
-- Bryan Mishkin ([@bmish](https://github.com/bmish))
-- [@Hagobert](https://github.com/Hagobert)
-
-
-## v2.1.2 (2025-03-16)
-
-#### :bug: Bug Fix
-* [#658](https://github.com/bmish/eslint-doc-generator/pull/658) Fix regression in ESM plugin loading ([@marcalexiei](https://github.com/marcalexiei))
-
-#### :house: Internal
-* [#654](https://github.com/bmish/eslint-doc-generator/pull/654) Use `.prettierrc.json` instead of `eslint` `prettier` rule to configure format options ([@marcalexiei](https://github.com/marcalexiei))
-
-#### Committers: 1
-- Marco Pasqualetti ([@marcalexiei](https://github.com/marcalexiei))
-
-
-## v2.1.1 (2025-03-10)
-
-#### :bug: Bug Fix
-* [#648](https://github.com/bmish/eslint-doc-generator/pull/648) Fix ESM support in Node 22+ when the package includes the `main` property ([@marcalexiei](https://github.com/marcalexiei))
-
-#### Committers: 1
-- Marco Pasqualetti ([@marcalexiei](https://github.com/marcalexiei))
-
-
-## v2.1.0 (2025-03-04)
-
-#### :rocket: Enhancement
-* [#598](https://github.com/bmish/eslint-doc-generator/pull/598) Support ESLint plugins with `"type": "module"` and `main` in package.json ([@y-hsgw](https://github.com/y-hsgw))
-
-#### Committers: 1
-- Yukihiro Hasegawa ([@y-hsgw](https://github.com/y-hsgw))
-
-
-## v2.0.2 (2024-12-22)
-
-#### :bug: Bug Fix
-* [#597](https://github.com/bmish/eslint-doc-generator/pull/597) Replace deprecated `boolean` dependency ([@y-hsgw](https://github.com/y-hsgw))
-
-#### Committers: 1
-- Yukihiro Hasegawa ([@y-hsgw](https://github.com/y-hsgw))
-
-
-## v2.0.1 (2024-12-12)
-
-#### :bug: Bug Fix
-* [#590](https://github.com/bmish/eslint-doc-generator/pull/590) Respect EOL character from `.editorconfig` ([@CloudNStoyan](https://github.com/CloudNStoyan))
-
-#### :house: Internal
-* [#591](https://github.com/bmish/eslint-doc-generator/pull/591) Switch to `change-case` ([@bmish](https://github.com/bmish))
-
-#### Committers: 2
-- Bryan Mishkin ([@bmish](https://github.com/bmish))
-- Stoyan Kolev ([@CloudNStoyan](https://github.com/CloudNStoyan))
-
+* correct path to types ([#298](https://github.com/MikeMcC399/eslint-doc-generator/issues/298)) ([04a0afa](https://github.com/MikeMcC399/eslint-doc-generator/commit/04a0afa84d4476d4908210cee6a8df6a6a467862))
+* no-op for testing release-please ([#739](https://github.com/MikeMcC399/eslint-doc-generator/issues/739)) ([0492d97](https://github.com/MikeMcC399/eslint-doc-generator/commit/0492d97b56a0ffa42fdb8272b8f32c9ec7a9deca))
+* no-op for testing release-please ([#745](https://github.com/MikeMcC399/eslint-doc-generator/issues/745)) ([d40250d](https://github.com/MikeMcC399/eslint-doc-generator/commit/d40250d8d2726be423f7871916e20aa590b9386b))
+* no-op for testing release-please ([#751](https://github.com/MikeMcC399/eslint-doc-generator/issues/751)) ([ade5adf](https://github.com/MikeMcC399/eslint-doc-generator/commit/ade5adf161fc7bb9a6fbac65954370034a2d237f))
+* OS-agnostic handling of end-of-line characters ([#524](https://github.com/MikeMcC399/eslint-doc-generator/issues/524)) ([4852197](https://github.com/MikeMcC399/eslint-doc-generator/commit/485219789f1bffd6e96e81a7a3b05f3053d20e33))
+* **package-json:** refine ESM logic to return default export only when it is the only available export ([#658](https://github.com/MikeMcC399/eslint-doc-generator/issues/658)) ([d194eae](https://github.com/MikeMcC399/eslint-doc-generator/commit/d194eaee5fbce1d998636a5d70d06c26a577affb))
+* Remove typeRoots and adjust types for Jest support ([#574](https://github.com/MikeMcC399/eslint-doc-generator/issues/574)) ([0ad8110](https://github.com/MikeMcC399/eslint-doc-generator/commit/0ad8110010c919170c524c4bee825dfd2ca2b031))
+* spacing for deprecated rule replaced by csv list ([#731](https://github.com/MikeMcC399/eslint-doc-generator/issues/731)) ([97a77fe](https://github.com/MikeMcC399/eslint-doc-generator/commit/97a77fef0b78ac1fe016aa9230e42d9378244d2b))
 
 ## v2.0.0 (2024-12-09)
 
