@@ -451,14 +451,12 @@ Alternatively, you can configure your scripts to run `prettier` after this tool:
 Markdown is processed using LF (`\n`) line endings internally. When writing each file, the end of line is chosen in this order:
 
 1. An **explicit** EditorConfig [`end_of_line`](https://editorconfig.org/) (`lf` / `crlf`) for that file path
-2. An **explicit** Prettier [`endOfLine`](https://prettier.io/docs/en/options.html#end-of-line) (`lf` / `crlf`) for that file path
-3. The predominant end of line already present in the file
-4. Prettier config present without an explicit `endOfLine` (or with `auto`) → LF (back-compat with [#803](https://github.com/eslint-community/eslint-doc-generator/pull/803); only applies when there is no existing line-ending signal)
-5. `os.EOL` (new files and files with no line breaks, and no Prettier config)
+2. The predominant end of line already present in the file
+3. `os.EOL` (new files and files with no line breaks)
 
-Tiers 2 and 4 (reading Prettier config) are **deprecated** and planned for removal in the next major (see `TODO`s in `lib/eol.ts`). Prefer EditorConfig for declarative end-of-line intent, or run Prettier itself via the [`postprocess`](#prettier) hook / a follow-up script.
+Prettier config is not consulted for line endings. To apply Prettier (including its `endOfLine`, ignores, and overrides), run Prettier itself via the [`postprocess`](#prettier) hook or after generation.
 
-When an explicit EditorConfig or Prettier `endOfLine` is set, files that use a different end of line are converted on the next run (a one-time diff), and `--check` fails until they match. Existing files keep their endings when only an implicit Prettier default would apply.
+When EditorConfig sets `end_of_line`, files that use a different end of line are converted on the next run (a one-time diff), and `--check` fails until they match. Without an EditorConfig `end_of_line`, existing file endings are preserved and `--check` compares against those.
 
 ### File Types
 
