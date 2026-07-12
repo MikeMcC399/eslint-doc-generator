@@ -456,7 +456,7 @@ Markdown is processed using LF (`\n`) line endings internally. When writing each
 4. Prettier config present without an explicit `endOfLine` (or with `auto`) → LF (back-compat with [#803](https://github.com/eslint-community/eslint-doc-generator/pull/803); only applies when there is no existing line-ending signal)
 5. `os.EOL` (new files and files with no line breaks, and no Prettier config)
 
-Tiers 2 and 4 (reading Prettier config) are **deprecated** and planned for removal in the next major. Prefer EditorConfig for declarative end-of-line intent, or run Prettier itself via the [`postprocess`](#prettier) hook / a follow-up script.
+Tiers 2 and 4 (reading Prettier config) are **deprecated** and planned for removal in the next major (see `TODO`s in `lib/eol.ts`). Prefer EditorConfig for declarative end-of-line intent, or run Prettier itself via the [`postprocess`](#prettier) hook / a follow-up script.
 
 When an explicit EditorConfig or Prettier `endOfLine` is set, files that use a different end of line are converted on the next run (a one-time diff), and `--check` fails until they match. Existing files keep their endings when only an implicit Prettier default would apply.
 

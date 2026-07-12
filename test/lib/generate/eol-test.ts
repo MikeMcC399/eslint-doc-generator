@@ -180,6 +180,7 @@ describe('createEndOfLineResolver', function () {
     });
   });
 
+  // TODO: remove Prettier end-of-line tests in the next major with the Prettier tiers.
   describe('with a Prettier config', function () {
     let fixture: FixtureContext;
 
@@ -565,6 +566,7 @@ describe('generate with end of line', function () {
       assertUniformEndOfLine(ruleDoc, '\n');
     });
 
+    // TODO: remove with Prettier explicit endOfLine tier in the next major.
     // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
     it('converts an LF file to CRLF when prettier explicitly sets endOfLine: crlf', async function () {
       fixture = await setupFixture({
@@ -590,6 +592,7 @@ describe('generate with end of line', function () {
       );
     });
 
+    // Detection outranks implicit Prettier LF — keep this after Prettier-tier removal.
     // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
     it('preserves CRLF when prettier config exists but does not set endOfLine (eslint-plugin-cypress / #726)', async function () {
       fixture = await setupFixture({
@@ -610,6 +613,7 @@ describe('generate with end of line', function () {
       assertUniformEndOfLine(await fixture.readFile('README.md'), '\r\n');
     });
 
+    // TODO: remove with Prettier implicit LF tier (#803) in the next major.
     // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
     it('uses implicit LF for new/empty docs when prettier config has no endOfLine (#803)', async function () {
       fixture = await setupFixture({
@@ -633,6 +637,7 @@ describe('generate with end of line', function () {
       );
     });
 
+    // TODO: remove with Prettier endOfLine reading in the next major (`auto` becomes irrelevant).
     // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
     it('falls through prettier endOfLine auto to per-file detection', async function () {
       fixture = await setupFixture({

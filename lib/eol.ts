@@ -5,6 +5,8 @@ import type { Cache as EditorConfigCache } from 'editorconfig';
 
 type EndOfLine = '\n' | '\r\n';
 
+// TODO: remove Prettier end-of-line reading in the next major — prefer
+// EditorConfig and running Prettier via `postprocess` (see README "Line endings").
 type PrettierEndOfLineResult =
   | { kind: 'explicit'; value: EndOfLine }
   | { kind: 'implicit' }
@@ -18,7 +20,8 @@ export type EndOfLineResolver = {
   getExplicitEndOfLine: (filePath: string) => Promise<EndOfLine | undefined>;
   /**
    * #803 back-compat: Prettier config is resolvable but `endOfLine` is unset
-   * or `auto` → LF. Deprecated; planned for removal in the next major.
+   * or `auto` → LF.
+   * TODO: remove in the next major (Prettier implicit LF tier).
    */
   getImplicitEndOfLine: (filePath: string) => Promise<'\n' | undefined>;
   /**
@@ -37,7 +40,9 @@ export type EndOfLineResolver = {
  */
 export function createEndOfLineResolver(): EndOfLineResolver {
   const explicitCache = new Map<string, Promise<EndOfLine | undefined>>();
+  // TODO: remove with Prettier implicit LF tier in the next major.
   const implicitCache = new Map<string, Promise<'\n' | undefined>>();
+  // TODO: remove with Prettier end-of-line reading in the next major.
   const prettierCache = new Map<string, Promise<PrettierEndOfLineResult>>();
   /** Shared across files so EditorConfig does not re-read the same files. */
   const editorConfigFileCache: EditorConfigCache = new Map();
@@ -79,6 +84,7 @@ export function createEndOfLineResolver(): EndOfLineResolver {
       return fromEditorConfig;
     }
 
+    // TODO: remove Prettier explicit endOfLine tier in the next major.
     const prettier = await getPrettierEndOfLine(absolutePath, prettierCache);
     return prettier.kind === 'explicit' ? prettier.value : undefined;
   }
@@ -96,6 +102,7 @@ export function createEndOfLineResolver(): EndOfLineResolver {
       return undefined;
     }
 
+    // TODO: remove Prettier implicit LF tier (#803) in the next major.
     const prettier = await getPrettierEndOfLine(absolutePath, prettierCache);
     return prettier.kind === 'implicit' ? '\n' : undefined;
   }
@@ -107,6 +114,7 @@ export function createEndOfLineResolver(): EndOfLineResolver {
     return (
       (await getExplicitEndOfLine(filePath)) ??
       (contents === undefined ? undefined : detectEndOfLine(contents)) ??
+      // TODO: remove Prettier implicit LF tier in the next major.
       (await getImplicitEndOfLine(filePath)) ??
       getFallbackEndOfLine()
     );
@@ -149,6 +157,8 @@ async function getPrettierEndOfLine(
   return result;
 }
 
+// TODO: remove Prettier end-of-line reading (and the optional `prettier` peer
+// dependency) in the next major — prefer EditorConfig / `postprocess`.
 async function resolvePrettierEndOfLine(
   filePath: string,
 ): Promise<PrettierEndOfLineResult> {
