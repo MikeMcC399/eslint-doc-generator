@@ -1,7 +1,7 @@
 import { generate } from '../../../lib/generator.js';
 import {
+  createEndOfLineResolver,
   detectEndOfLine,
-  getConfiguredEndOfLine,
   getFallbackEndOfLine,
   normalizeEndOfLine,
 } from '../../../lib/eol.js';
@@ -57,7 +57,7 @@ describe('normalizeEndOfLine', function () {
   });
 });
 
-describe('getConfiguredEndOfLine', function () {
+describe('createEndOfLineResolver', function () {
   describe('with a ".editorconfig" file', function () {
     let fixture: FixtureContext;
 
@@ -77,9 +77,13 @@ describe('getConfiguredEndOfLine', function () {
         },
       });
 
+      const eol = createEndOfLineResolver();
       expect(
-        await getConfiguredEndOfLine(join(fixture.path, 'README.md')),
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
       ).toStrictEqual('\n');
+      expect(
+        await eol.getImplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toBeUndefined();
     });
 
     it('returns crlf when ".editorconfig" is configured with crlf', async function () {
@@ -94,8 +98,9 @@ describe('getConfiguredEndOfLine', function () {
         },
       });
 
+      const eol = createEndOfLineResolver();
       expect(
-        await getConfiguredEndOfLine(join(fixture.path, 'README.md')),
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
       ).toStrictEqual('\r\n');
     });
 
@@ -114,8 +119,9 @@ describe('getConfiguredEndOfLine', function () {
         },
       });
 
+      const eol = createEndOfLineResolver();
       expect(
-        await getConfiguredEndOfLine(join(fixture.path, 'README.md')),
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
       ).toStrictEqual('\r\n');
     });
 
@@ -134,12 +140,41 @@ describe('getConfiguredEndOfLine', function () {
         },
       });
 
+      const eol = createEndOfLineResolver();
       expect(
-        await getConfiguredEndOfLine(join(fixture.path, 'README.md')),
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
       ).toStrictEqual('\n');
       expect(
-        await getConfiguredEndOfLine(
+        await eol.getExplicitEndOfLine(
           join(fixture.path, 'docs/rules/no-foo.md'),
+        ),
+      ).toStrictEqual('\r\n');
+    });
+
+    it('resolves sibling .md and .mdx files independently (cache keyed by path)', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          '.editorconfig': `
+                  root = true
+
+                  [*.md]
+                  end_of_line = lf
+
+                  [*.mdx]
+                  end_of_line = crlf`,
+        },
+      });
+
+      const eol = createEndOfLineResolver();
+      expect(
+        await eol.getExplicitEndOfLine(
+          join(fixture.path, 'docs/rules/no-foo.md'),
+        ),
+      ).toStrictEqual('\n');
+      expect(
+        await eol.getExplicitEndOfLine(
+          join(fixture.path, 'docs/rules/no-bar.mdx'),
         ),
       ).toStrictEqual('\r\n');
     });
@@ -152,7 +187,28 @@ describe('getConfiguredEndOfLine', function () {
       await fixture.cleanup();
     });
 
-    it('ignores Prettier config even when endOfLine is set (use postprocess to run Prettier)', async function () {
+    it('returns lf when ".prettierrc.json" is configured with lf', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          '.prettierrc.json': `
+                  {
+                    "$schema": "https://json.schemastore.org/prettierrc",
+                    "endOfLine": "lf"
+                  }`,
+        },
+      });
+
+      const eol = createEndOfLineResolver();
+      expect(
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toStrictEqual('\n');
+      expect(
+        await eol.getImplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toBeUndefined();
+    });
+
+    it('returns crlf when ".prettierrc.json" is configured with crlf', async function () {
       fixture = await setupFixture({
         fixture: 'esm-base',
         overrides: {
@@ -164,9 +220,51 @@ describe('getConfiguredEndOfLine', function () {
         },
       });
 
+      const eol = createEndOfLineResolver();
       expect(
-        await getConfiguredEndOfLine(join(fixture.path, 'README.md')),
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toStrictEqual('\r\n');
+    });
+
+    it('treats Prettier config without endOfLine as implicit LF (#803)', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          '.prettierrc.json': `
+                  {
+                    "$schema": "https://json.schemastore.org/prettierrc"
+                  }`,
+        },
+      });
+
+      const eol = createEndOfLineResolver();
+      expect(
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
       ).toBeUndefined();
+      expect(
+        await eol.getImplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toStrictEqual('\n');
+    });
+
+    it('treats Prettier endOfLine auto as implicit LF (falls through explicit tier)', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          '.prettierrc.json': `
+                  {
+                    "$schema": "https://json.schemastore.org/prettierrc",
+                    "endOfLine": "auto"
+                  }`,
+        },
+      });
+
+      const eol = createEndOfLineResolver();
+      expect(
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toBeUndefined();
+      expect(
+        await eol.getImplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toStrictEqual('\n');
     });
   });
 
@@ -182,8 +280,12 @@ describe('getConfiguredEndOfLine', function () {
         fixture: 'esm-base',
       });
 
+      const eol = createEndOfLineResolver();
       expect(
-        await getConfiguredEndOfLine(join(fixture.path, 'README.md')),
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toBeUndefined();
+      expect(
+        await eol.getImplicitEndOfLine(join(fixture.path, 'README.md')),
       ).toBeUndefined();
       expect(getFallbackEndOfLine()).toStrictEqual(EOL);
     });
@@ -366,6 +468,46 @@ describe('generate with end of line', function () {
         '\r\n',
       );
     });
+
+    // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
+    it('writes sibling .md and .mdx docs with their own editorconfig end_of_line', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          'index.js': `
+          export default {
+            rules: {
+              'no-foo': { meta: { docs: { description: 'Description of no-foo.' } }, create(context) {} },
+              'no-bar': { meta: { docs: { description: 'Description of no-bar.' } }, create(context) {} },
+            },
+          };`,
+          'docs/rules/no-foo.md': '',
+          // Only the .mdx file exists; resolveDocPath falls back from .md → .mdx.
+          'docs/rules/no-bar.mdx': '',
+          'README.md':
+            '## Rules\n\n<!-- begin auto-generated rules list -->\n<!-- end auto-generated rules list -->\n',
+          '.editorconfig': `
+                  root = true
+
+                  [*.md]
+                  end_of_line = lf
+
+                  [*.mdx]
+                  end_of_line = crlf`,
+        },
+      });
+
+      await generate(fixture.path);
+
+      assertUniformEndOfLine(
+        await fixture.readFile('docs/rules/no-foo.md'),
+        '\n',
+      );
+      assertUniformEndOfLine(
+        await fixture.readFile('docs/rules/no-bar.mdx'),
+        '\r\n',
+      );
+    });
   });
 
   describe('explicit config precedence', function () {
@@ -424,7 +566,32 @@ describe('generate with end of line', function () {
     });
 
     // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
-    it('preserves file endings when Prettier sets endOfLine (Prettier is not consulted for EOL)', async function () {
+    it('converts an LF file to CRLF when prettier explicitly sets endOfLine: crlf', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          'docs/rules/no-foo.md': '',
+          'README.md':
+            '## Rules\n\n<!-- begin auto-generated rules list -->\n<!-- end auto-generated rules list -->\n',
+          '.prettierrc.json': `
+                  {
+                    "$schema": "https://json.schemastore.org/prettierrc",
+                    "endOfLine": "crlf"
+                  }`,
+        },
+      });
+
+      await generate(fixture.path);
+
+      assertUniformEndOfLine(await fixture.readFile('README.md'), '\r\n');
+      assertUniformEndOfLine(
+        await fixture.readFile('docs/rules/no-foo.md'),
+        '\r\n',
+      );
+    });
+
+    // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
+    it('preserves CRLF when prettier config exists but does not set endOfLine (eslint-plugin-cypress / #726)', async function () {
       fixture = await setupFixture({
         fixture: 'esm-base',
         overrides: {
@@ -433,8 +600,7 @@ describe('generate with end of line', function () {
             '## Rules\r\n\r\n<!-- begin auto-generated rules list -->\r\n<!-- end auto-generated rules list -->\r\n',
           '.prettierrc.json': `
                   {
-                    "$schema": "https://json.schemastore.org/prettierrc",
-                    "endOfLine": "lf"
+                    "$schema": "https://json.schemastore.org/prettierrc"
                   }`,
         },
       });
@@ -445,7 +611,30 @@ describe('generate with end of line', function () {
     });
 
     // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
-    it('preserves CRLF when prettier config exists but does not set endOfLine (eslint-plugin-cypress case)', async function () {
+    it('uses implicit LF for new/empty docs when prettier config has no endOfLine (#803)', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          'docs/rules/no-foo.md': '',
+          'README.md':
+            '## Rules\n\n<!-- begin auto-generated rules list -->\n<!-- end auto-generated rules list -->\n',
+          '.prettierrc.json': `
+                  {
+                    "$schema": "https://json.schemastore.org/prettierrc"
+                  }`,
+        },
+      });
+
+      await generate(fixture.path);
+
+      assertUniformEndOfLine(
+        await fixture.readFile('docs/rules/no-foo.md'),
+        '\n',
+      );
+    });
+
+    // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
+    it('falls through prettier endOfLine auto to per-file detection', async function () {
       fixture = await setupFixture({
         fixture: 'esm-base',
         overrides: {
@@ -454,7 +643,8 @@ describe('generate with end of line', function () {
             '## Rules\r\n\r\n<!-- begin auto-generated rules list -->\r\n<!-- end auto-generated rules list -->\r\n',
           '.prettierrc.json': `
                   {
-                    "$schema": "https://json.schemastore.org/prettierrc"
+                    "$schema": "https://json.schemastore.org/prettierrc",
+                    "endOfLine": "auto"
                   }`,
         },
       });
