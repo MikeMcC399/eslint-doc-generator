@@ -26,7 +26,12 @@ import { replaceRulePlaceholder } from './rule-link.js';
 import { updateRuleOptionsList } from './rule-options-list.js';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { getContext } from './context.js';
-import { detectEndOfLine, getEndOfLine, normalizeEndOfLine } from './eol.js';
+import {
+  detectEndOfLine,
+  getConfiguredEndOfLine,
+  getFallbackEndOfLine,
+  normalizeEndOfLine,
+} from './eol.js';
 import { generateSuggestedEmojis } from './suggest-emojis.js';
 import { generateFrontmatterLines } from './frontmatter.js';
 
@@ -59,16 +64,30 @@ function resolveDocPath(configuredPath: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Resolve the end of line to use when writing a markdown file.
+ * Precedence: explicit EditorConfig/Prettier endOfLine → predominant end of
+ * line in the existing contents → `os.EOL`.
+ */
+async function resolveFileEndOfLine(
+  filePath: string,
+  contents: string | undefined,
+): Promise<'\n' | '\r\n'> {
+  return (
+    (await getConfiguredEndOfLine(filePath)) ??
+    (contents === undefined ? undefined : detectEndOfLine(contents)) ??
+    getFallbackEndOfLine()
+  );
+}
+
 // eslint-disable-next-line complexity
 export async function generate(path: string, userOptions?: GenerateOptions) {
   const context = await getContext(path, userOptions);
   const { options, plugin } = context;
 
   // All markdown content is processed using LF (`\n`) line endings internally.
-  // Each file is written using the end of line already predominant in that
-  // file, falling back to the configured end of line (EditorConfig, then
-  // Prettier, then `os.EOL`) for new files and files without line breaks.
-  const configuredEndOfLine = await getEndOfLine();
+  // Each file is written using: explicit EditorConfig/Prettier endOfLine, else
+  // the predominant end of line already in that file, else `os.EOL`.
 
   // Destructure options that are only used in this function. Other options are passed around using
   // the "context" object.
@@ -164,9 +183,11 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
       }
 
       await mkdir(dirname(pathToDoc), { recursive: true });
+      // New docs have no contents to detect from; use explicit config or os.EOL.
+      const newDocEndOfLine = await resolveFileEndOfLine(pathToDoc, undefined);
       await writeFile(
         pathToDoc,
-        normalizeEndOfLine(newRuleDocContents, configuredEndOfLine),
+        normalizeEndOfLine(newRuleDocContents, newDocEndOfLine),
       );
       initializedRuleDoc = true;
     }
@@ -175,11 +196,10 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
     const contentsOldBuffer = await readFile(pathToDoc);
     const contentsOld = contentsOldBuffer.toString();
 
-    // Process the doc using LF line endings. When writing, use the end of
-    // line already predominant in the doc so that its line endings are
-    // preserved even when they differ from the configured end of line (such
-    // as when another tool like Prettier rewrote the doc).
-    const endOfLine = detectEndOfLine(contentsOld) ?? configuredEndOfLine;
+    // Process the doc using LF line endings. When writing, prefer an explicit
+    // EditorConfig/Prettier endOfLine (converting the file if needed), else
+    // keep the predominant end of line already in the doc, else `os.EOL`.
+    const endOfLine = await resolveFileEndOfLine(pathToDoc, contentsOld);
     const contentsOldNormalized = normalizeEndOfLine(contentsOld, '\n');
 
     const frontmatterOld = extractFrontmatter(contentsOldNormalized);
@@ -300,10 +320,10 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
     // Update the rules list in this file.
     const fileContents = await readFile(pathToFile, 'utf8');
 
-    // Process the file using LF line endings. When writing, use the end of
-    // line already predominant in the file so that its line endings are
-    // preserved even when they differ from the configured end of line.
-    const endOfLine = detectEndOfLine(fileContents) ?? configuredEndOfLine;
+    // Process the file using LF line endings. When writing, prefer an explicit
+    // EditorConfig/Prettier endOfLine, else the predominant end of line
+    // already in the file, else `os.EOL`.
+    const endOfLine = await resolveFileEndOfLine(pathToFile, fileContents);
     const fileContentsNormalized = normalizeEndOfLine(fileContents, '\n');
 
     const rulesList = updateRulesList(

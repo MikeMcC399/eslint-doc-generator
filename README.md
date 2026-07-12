@@ -42,6 +42,7 @@ Also performs [configurable](#configuration-options) section consistency checks 
   - [Build tools](#build-tools)
   - [markdownlint](#markdownlint)
   - [prettier](#prettier)
+  - [Line endings](#line-endings)
   - [File Types](#file-types)
 - [Semantic versioning policy](#semantic-versioning-policy)
 - [Related](#related)
@@ -444,6 +445,18 @@ Alternatively, you can configure your scripts to run `prettier` after this tool:
   "update:eslint-docs": "eslint-doc-generator && npm run format"
 }
 ```
+
+### Line endings
+
+Markdown is processed using LF (`\n`) line endings internally. When writing each file, the end of line is chosen in this order:
+
+1. An **explicit** EditorConfig `end_of_line` or Prettier `endOfLine` (`lf` / `crlf`) for that file path
+2. The predominant end of line already present in the file
+3. `os.EOL` (new files and files with no line breaks)
+
+A Prettier config that does not set `endOfLine` (or sets it to `auto`) is ignored for this purpose — only an explicitly configured value counts.
+
+When an explicit config is present, files that use a different end of line are converted on the next run (a one-time diff), and `--check` fails until they match. Without an explicit config, existing file endings are preserved and `--check` compares against those.
 
 ### File Types
 

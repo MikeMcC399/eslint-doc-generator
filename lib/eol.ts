@@ -1,20 +1,49 @@
 import { EOL } from 'node:os';
+import { dirname, resolve } from 'node:path';
 import editorconfig from 'editorconfig';
 
-export async function getEndOfLine(): Promise<'\n' | '\r\n'> {
-  return (
-    (await getEndOfLineFromEditorConfig()) ??
-    (await getEndOfLineFromPrettierConfig()) ??
-    getNodeEOL()
-  );
+/** Memoize by directory — rule docs share a folder. */
+const configuredEndOfLineCache = new Map<
+  string,
+  Promise<'\n' | '\r\n' | undefined>
+>();
+
+/**
+ * Resolve an explicitly configured end of line for the given file path.
+ * Only EditorConfig `end_of_line` and an explicitly set Prettier `endOfLine`
+ * (`lf` or `crlf`) count as configured. A Prettier config without `endOfLine`
+ * (or with `auto`) does not imply LF — returns undefined so callers can fall
+ * through to per-file detection.
+ */
+export async function getConfiguredEndOfLine(
+  filePath: string,
+): Promise<'\n' | '\r\n' | undefined> {
+  const absolutePath = resolve(filePath);
+  const cacheKey = dirname(absolutePath);
+
+  let cached = configuredEndOfLineCache.get(cacheKey);
+  if (!cached) {
+    cached = resolveConfiguredEndOfLine(absolutePath);
+    configuredEndOfLineCache.set(cacheKey, cached);
+  }
+  const result = await cached;
+  return result;
 }
 
-async function getEndOfLineFromEditorConfig(): Promise<
-  '\n' | '\r\n' | undefined
-> {
-  // The passed `markdown.md` argument is used as an example of a Markdown file in the plugin root
-  // folder in order to check for any specific Markdown configurations.
-  const editorConfigProps = await editorconfig.parse('markdown.md');
+async function resolveConfiguredEndOfLine(
+  absolutePath: string,
+): Promise<'\n' | '\r\n' | undefined> {
+  const fromEditorConfig = await getEndOfLineFromEditorConfig(absolutePath);
+  if (fromEditorConfig !== undefined) {
+    return fromEditorConfig;
+  }
+  return getEndOfLineFromPrettierConfig(absolutePath);
+}
+
+async function getEndOfLineFromEditorConfig(
+  filePath: string,
+): Promise<'\n' | '\r\n' | undefined> {
+  const editorConfigProps = await editorconfig.parse(filePath);
 
   if (editorConfigProps.end_of_line === 'lf') {
     return '\n';
@@ -27,9 +56,9 @@ async function getEndOfLineFromEditorConfig(): Promise<
   return undefined;
 }
 
-async function getEndOfLineFromPrettierConfig(): Promise<
-  '\n' | '\r\n' | undefined
-> {
+async function getEndOfLineFromPrettierConfig(
+  filePath: string,
+): Promise<'\n' | '\r\n' | undefined> {
   // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- prettier is an optional peer dependency, must be dynamically imported
   let prettier: typeof import('prettier') | undefined;
   try {
@@ -39,9 +68,7 @@ async function getEndOfLineFromPrettierConfig(): Promise<
     return undefined;
   }
 
-  // The passed `markdown.md` argument is used as an example of a Markdown file in the plugin root
-  // folder in order to check for any specific Markdown configurations.
-  const prettierOptions = await prettier.resolveConfig('markdown.md');
+  const prettierOptions = await prettier.resolveConfig(filePath);
 
   if (prettierOptions === null) {
     return undefined;
@@ -55,9 +82,8 @@ async function getEndOfLineFromPrettierConfig(): Promise<
     return '\r\n';
   }
 
-  // Prettier defaults to "lf" if it is not explicitly specified in the config file:
-  // https://prettier.io/docs/options#end-of-line
-  return '\n';
+  // Unset or `auto` — not an explicit end of line; fall through to detection.
+  return undefined;
 }
 
 /**
@@ -82,7 +108,12 @@ export function normalizeEndOfLine(
   contents: string,
   endOfLine: string,
 ): string {
-  return contents.replaceAll(/\r\n|\n/gu, endOfLine);
+  return contents.replaceAll(/\r\n|[\r\n]/gu, endOfLine);
+}
+
+/** Fallback when there is no explicit config and no detectable end of line. */
+export function getFallbackEndOfLine(): '\n' | '\r\n' {
+  return getNodeEOL();
 }
 
 /* istanbul ignore next */
