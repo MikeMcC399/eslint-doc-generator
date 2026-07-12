@@ -37,6 +37,10 @@ describe('detectEndOfLine', function () {
     expect(detectEndOfLine('a\r\nb\r\nc\n')).toStrictEqual('\r\n');
     expect(detectEndOfLine('a\nb\nc\r\n')).toStrictEqual('\n');
   });
+
+  it('prefers lf when CRLF and LF counts are equal', function () {
+    expect(detectEndOfLine('a\r\nb\n')).toStrictEqual('\n');
+  });
 });
 
 describe('normalizeEndOfLine', function () {
@@ -174,6 +178,24 @@ describe('createEndOfLineResolver', function () {
           join(fixture.path, 'docs/rules/no-bar.mdx'),
         ),
       ).toStrictEqual('\r\n');
+    });
+
+    it('treats EditorConfig end_of_line = cr as unset', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          '.editorconfig': `
+                  root = true
+
+                  [*]
+                  end_of_line = cr`,
+        },
+      });
+
+      const eol = createEndOfLineResolver();
+      expect(
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toBeUndefined();
     });
   });
 
@@ -656,6 +678,93 @@ describe('generate with end of line', function () {
       process.exitCode = undefined;
       await generate(fixture.path, { check: true });
       expect(process.exitCode).toBeUndefined();
+    });
+
+    // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
+    it('unifies stray lone CR when updating an existing file', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          'docs/rules/no-foo.md': '',
+          // Mostly LF with a stray classic Mac CR so normalization must clear it.
+          'README.md':
+            '## Rules\n\n<!-- begin auto-generated rules list -->\r<!-- end auto-generated rules list -->\n',
+        },
+      });
+
+      await generate(fixture.path);
+
+      assertUniformEndOfLine(await fixture.readFile('README.md'), '\n');
+    });
+  });
+
+  describe('--init-rule-docs', function () {
+    let fixture: FixtureContext;
+
+    afterEach(async function () {
+      await fixture.cleanup();
+    });
+
+    // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
+    it('creates new rule docs using editorconfig end_of_line', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          'index.js': `
+          export default {
+            rules: {
+              'no-new': {
+                meta: { docs: { description: 'Description of no-new.' } },
+                create(context) {}
+              },
+            },
+          };`,
+          'README.md':
+            '## Rules\n\n<!-- begin auto-generated rules list -->\n<!-- end auto-generated rules list -->\n',
+          '.editorconfig': `
+                root = true
+
+                [*]
+                end_of_line = crlf`,
+        },
+      });
+
+      await generate(fixture.path, { initRuleDocs: true });
+
+      assertUniformEndOfLine(
+        await fixture.readFile('docs/rules/no-new.md'),
+        '\r\n',
+      );
+    });
+  });
+
+  describe('postprocess', function () {
+    let fixture: FixtureContext;
+
+    afterEach(async function () {
+      await fixture.cleanup();
+    });
+
+    // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
+    it('writes postprocess output endings verbatim', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          'docs/rules/no-foo.md': '',
+          'README.md':
+            '## Rules\n\n<!-- begin auto-generated rules list -->\n<!-- end auto-generated rules list -->\n',
+        },
+      });
+
+      await generate(fixture.path, {
+        postprocess: (content) => content.replaceAll('\n', '\r\n'),
+      });
+
+      assertUniformEndOfLine(await fixture.readFile('README.md'), '\r\n');
+      assertUniformEndOfLine(
+        await fixture.readFile('docs/rules/no-foo.md'),
+        '\r\n',
+      );
     });
   });
 });

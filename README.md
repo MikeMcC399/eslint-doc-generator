@@ -454,7 +454,7 @@ Markdown is processed using LF (`\n`) line endings internally. When writing each
 2. The predominant end of line already present in the file
 3. `os.EOL` (new files and files with no line breaks)
 
-Prettier config is not consulted for line endings. To apply Prettier (including its `endOfLine`, ignores, and overrides), run Prettier itself via the [`postprocess`](#prettier) hook or after generation.
+Only `lf` and `crlf` are honored from EditorConfig; other values such as `cr` are treated as unset. Prettier config is not consulted for line endings. To apply Prettier (including its `endOfLine`, ignores, and overrides), run Prettier itself via the [`postprocess`](#prettier) hook or after generation.
 
 When EditorConfig sets `end_of_line`, files that use a different end of line are converted on the next run (a one-time diff), and `--check` fails until they match. Without an EditorConfig `end_of_line`, existing file endings are preserved and `--check` compares against those.
 
