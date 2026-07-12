@@ -152,24 +152,7 @@ describe('getConfiguredEndOfLine', function () {
       await fixture.cleanup();
     });
 
-    it('returns lf when ".prettierrc.json" is configured with lf', async function () {
-      fixture = await setupFixture({
-        fixture: 'esm-base',
-        overrides: {
-          '.prettierrc.json': `
-                  {
-                    "$schema": "https://json.schemastore.org/prettierrc",
-                    "endOfLine": "lf"
-                  }`,
-        },
-      });
-
-      expect(
-        await getConfiguredEndOfLine(join(fixture.path, 'README.md')),
-      ).toStrictEqual('\n');
-    });
-
-    it('returns crlf when ".prettierrc.json" is configured with crlf', async function () {
+    it('ignores Prettier config even when endOfLine is set (use postprocess to run Prettier)', async function () {
       fixture = await setupFixture({
         fixture: 'esm-base',
         overrides: {
@@ -177,22 +160,6 @@ describe('getConfiguredEndOfLine', function () {
                   {
                     "$schema": "https://json.schemastore.org/prettierrc",
                     "endOfLine": "crlf"
-                  }`,
-        },
-      });
-
-      expect(
-        await getConfiguredEndOfLine(join(fixture.path, 'README.md')),
-      ).toStrictEqual('\r\n');
-    });
-
-    it('returns undefined when ".prettierrc.json" does not set "endOfLine"', async function () {
-      fixture = await setupFixture({
-        fixture: 'esm-base',
-        overrides: {
-          '.prettierrc.json': `
-                  {
-                    "$schema": "https://json.schemastore.org/prettierrc"
                   }`,
         },
       });
@@ -457,17 +424,17 @@ describe('generate with end of line', function () {
     });
 
     // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine
-    it('converts an LF file to CRLF when prettier explicitly sets endOfLine: crlf', async function () {
+    it('preserves file endings when Prettier sets endOfLine (Prettier is not consulted for EOL)', async function () {
       fixture = await setupFixture({
         fixture: 'esm-base',
         overrides: {
           'docs/rules/no-foo.md': '',
           'README.md':
-            '## Rules\n\n<!-- begin auto-generated rules list -->\n<!-- end auto-generated rules list -->\n',
+            '## Rules\r\n\r\n<!-- begin auto-generated rules list -->\r\n<!-- end auto-generated rules list -->\r\n',
           '.prettierrc.json': `
                   {
                     "$schema": "https://json.schemastore.org/prettierrc",
-                    "endOfLine": "crlf"
+                    "endOfLine": "lf"
                   }`,
         },
       });
@@ -475,10 +442,6 @@ describe('generate with end of line', function () {
       await generate(fixture.path);
 
       assertUniformEndOfLine(await fixture.readFile('README.md'), '\r\n');
-      assertUniformEndOfLine(
-        await fixture.readFile('docs/rules/no-foo.md'),
-        '\r\n',
-      );
     });
 
     // eslint-disable-next-line vitest/expect-expect -- assertions via assertUniformEndOfLine

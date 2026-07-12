@@ -9,11 +9,12 @@ const configuredEndOfLineCache = new Map<
 >();
 
 /**
- * Resolve an explicitly configured end of line for the given file path.
- * Only EditorConfig `end_of_line` and an explicitly set Prettier `endOfLine`
- * (`lf` or `crlf`) count as configured. A Prettier config without `endOfLine`
- * (or with `auto`) does not imply LF — returns undefined so callers can fall
+ * Resolve an explicitly configured end of line for the given file path from
+ * EditorConfig `end_of_line`. Returns undefined when unset so callers can fall
  * through to per-file detection.
+ *
+ * Prettier config is intentionally not read here — run Prettier via
+ * `postprocess` (or a follow-up script) instead of interpreting its options.
  */
 export async function getConfiguredEndOfLine(
   filePath: string,
@@ -23,21 +24,11 @@ export async function getConfiguredEndOfLine(
 
   let cached = configuredEndOfLineCache.get(cacheKey);
   if (!cached) {
-    cached = resolveConfiguredEndOfLine(absolutePath);
+    cached = getEndOfLineFromEditorConfig(absolutePath);
     configuredEndOfLineCache.set(cacheKey, cached);
   }
   const result = await cached;
   return result;
-}
-
-async function resolveConfiguredEndOfLine(
-  absolutePath: string,
-): Promise<'\n' | '\r\n' | undefined> {
-  const fromEditorConfig = await getEndOfLineFromEditorConfig(absolutePath);
-  if (fromEditorConfig !== undefined) {
-    return fromEditorConfig;
-  }
-  return getEndOfLineFromPrettierConfig(absolutePath);
 }
 
 async function getEndOfLineFromEditorConfig(
@@ -53,36 +44,6 @@ async function getEndOfLineFromEditorConfig(
     return '\r\n';
   }
 
-  return undefined;
-}
-
-async function getEndOfLineFromPrettierConfig(
-  filePath: string,
-): Promise<'\n' | '\r\n' | undefined> {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports -- prettier is an optional peer dependency, must be dynamically imported
-  let prettier: typeof import('prettier') | undefined;
-  try {
-    prettier = await import('prettier');
-  } catch {
-    /* istanbul ignore next */
-    return undefined;
-  }
-
-  const prettierOptions = await prettier.resolveConfig(filePath);
-
-  if (prettierOptions === null) {
-    return undefined;
-  }
-
-  if (prettierOptions.endOfLine === 'lf') {
-    return '\n';
-  }
-
-  if (prettierOptions.endOfLine === 'crlf') {
-    return '\r\n';
-  }
-
-  // Unset or `auto` — not an explicit end of line; fall through to detection.
   return undefined;
 }
 

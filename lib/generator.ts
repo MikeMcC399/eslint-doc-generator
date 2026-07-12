@@ -66,8 +66,8 @@ function resolveDocPath(configuredPath: string): string | undefined {
 
 /**
  * Resolve the end of line to use when writing a markdown file.
- * Precedence: explicit EditorConfig/Prettier endOfLine → predominant end of
- * line in the existing contents → `os.EOL`.
+ * Precedence: explicit EditorConfig `end_of_line` → predominant end of line in
+ * the existing contents → `os.EOL`.
  */
 async function resolveFileEndOfLine(
   filePath: string,
@@ -86,8 +86,8 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
   const { options, plugin } = context;
 
   // All markdown content is processed using LF (`\n`) line endings internally.
-  // Each file is written using: explicit EditorConfig/Prettier endOfLine, else
-  // the predominant end of line already in that file, else `os.EOL`.
+  // Each file is written using: explicit EditorConfig `end_of_line`, else the
+  // predominant end of line already in that file, else `os.EOL`.
 
   // Destructure options that are only used in this function. Other options are passed around using
   // the "context" object.
@@ -197,8 +197,8 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
     const contentsOld = contentsOldBuffer.toString();
 
     // Process the doc using LF line endings. When writing, prefer an explicit
-    // EditorConfig/Prettier endOfLine (converting the file if needed), else
-    // keep the predominant end of line already in the doc, else `os.EOL`.
+    // EditorConfig `end_of_line` (converting the file if needed), else keep the
+    // predominant end of line already in the doc, else `os.EOL`.
     const endOfLine = await resolveFileEndOfLine(pathToDoc, contentsOld);
     const contentsOldNormalized = normalizeEndOfLine(contentsOld, '\n');
 
@@ -321,8 +321,8 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
     const fileContents = await readFile(pathToFile, 'utf8');
 
     // Process the file using LF line endings. When writing, prefer an explicit
-    // EditorConfig/Prettier endOfLine, else the predominant end of line
-    // already in the file, else `os.EOL`.
+    // EditorConfig `end_of_line`, else the predominant end of line already in
+    // the file, else `os.EOL`.
     const endOfLine = await resolveFileEndOfLine(pathToFile, fileContents);
     const fileContentsNormalized = normalizeEndOfLine(fileContents, '\n');
 

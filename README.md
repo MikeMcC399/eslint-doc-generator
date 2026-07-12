@@ -450,13 +450,13 @@ Alternatively, you can configure your scripts to run `prettier` after this tool:
 
 Markdown is processed using LF (`\n`) line endings internally. When writing each file, the end of line is chosen in this order:
 
-1. An **explicit** EditorConfig `end_of_line` or Prettier `endOfLine` (`lf` / `crlf`) for that file path
+1. An **explicit** EditorConfig [`end_of_line`](https://editorconfig.org/) (`lf` / `crlf`) for that file path
 2. The predominant end of line already present in the file
 3. `os.EOL` (new files and files with no line breaks)
 
-A Prettier config that does not set `endOfLine` (or sets it to `auto`) is ignored for this purpose — only an explicitly configured value counts.
+Prettier config is not read for line endings. To format with Prettier (including its `endOfLine`), use the [`postprocess`](#prettier) hook or run Prettier after this tool — that runs Prettier itself with its full config, ignores, and overrides.
 
-When an explicit config is present, files that use a different end of line are converted on the next run (a one-time diff), and `--check` fails until they match. Without an explicit config, existing file endings are preserved and `--check` compares against those.
+When EditorConfig sets `end_of_line`, files that use a different end of line are converted on the next run (a one-time diff), and `--check` fails until they match. Without an EditorConfig `end_of_line`, existing file endings are preserved and `--check` compares against those.
 
 ### File Types
 
