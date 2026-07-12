@@ -37,6 +37,13 @@ export type EndOfLineResolver = {
 /**
  * Create a memoized end-of-line resolver scoped to one `generate()` run.
  * Cache keys are absolute file paths so sibling `.md`/`.mdx` files can differ.
+ *
+ * Write-time precedence for `resolve()`:
+ * 1. Explicit EditorConfig `end_of_line`
+ * 2. Explicit Prettier `endOfLine` (`lf`/`crlf`) — TODO: remove next major
+ * 3. Predominant end of line in existing contents (skip when `contents` is undefined)
+ * 4. Implicit Prettier LF when a config exists without `endOfLine` — TODO: remove next major
+ * 5. `os.EOL`
  */
 export function createEndOfLineResolver(): EndOfLineResolver {
   const explicitCache = new Map<string, Promise<EndOfLine | undefined>>();

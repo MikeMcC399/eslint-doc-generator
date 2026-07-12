@@ -65,10 +65,8 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
   const { options, plugin } = context;
   const endOfLineResolver = createEndOfLineResolver();
 
-  // All markdown content is processed using LF (`\n`) line endings internally.
-  // Each file is written using: explicit EditorConfig/Prettier endOfLine, else
-  // the predominant end of line already in that file, else Prettier's implicit
-  // LF default when a config exists without endOfLine (#803), else `os.EOL`.
+  // Markdown is processed with LF internally; each file's write end of line
+  // comes from `endOfLineResolver` (see `lib/eol.ts`).
 
   // Destructure options that are only used in this function. Other options are passed around using
   // the "context" object.
@@ -164,7 +162,6 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
       }
 
       await mkdir(dirname(pathToDoc), { recursive: true });
-      // New docs have no contents to detect from; use explicit/implicit config or os.EOL.
       const newDocEndOfLine = await endOfLineResolver.resolve(
         pathToDoc,
         undefined,
@@ -180,10 +177,7 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
     const contentsOldBuffer = await readFile(pathToDoc);
     const contentsOld = contentsOldBuffer.toString();
 
-    // Process the doc using LF line endings. When writing, prefer explicit
-    // EditorConfig/Prettier endOfLine (converting if needed), else keep the
-    // predominant end of line already in the doc, else Prettier's implicit LF
-    // (#803), else `os.EOL`.
+    // Normalize to LF for processing; restore this file's end of line before write.
     const endOfLine = await endOfLineResolver.resolve(pathToDoc, contentsOld);
     const contentsOldNormalized = normalizeEndOfLine(contentsOld, '\n');
 
@@ -305,9 +299,7 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
     // Update the rules list in this file.
     const fileContents = await readFile(pathToFile, 'utf8');
 
-    // Process the file using LF line endings. When writing, prefer explicit
-    // EditorConfig/Prettier endOfLine, else the predominant end of line already
-    // in the file, else Prettier's implicit LF (#803), else `os.EOL`.
+    // Normalize to LF for processing; restore this file's end of line before write.
     const endOfLine = await endOfLineResolver.resolve(pathToFile, fileContents);
     const fileContentsNormalized = normalizeEndOfLine(fileContents, '\n');
 
