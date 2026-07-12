@@ -425,12 +425,22 @@ If you use [prettier](https://prettier.io/) to format your markdown, you can pro
 
 ```javascript
 const prettier = require('prettier');
-const { prettier: prettierRC } = require('./package.json'); // or wherever your prettier config lies
 
 /** @type {import('eslint-doc-generator').GenerateOptions} */
 const config = {
-  postprocess: (content, path) =>
-    prettier.format(content, { ...prettierRC, parser: 'markdown' }),
+  postprocess: async (content, path) => {
+    // Skip files that Prettier is configured to ignore.
+    const fileInfo = await prettier.getFileInfo(path, {
+      ignorePath: '.prettierignore',
+    });
+    if (fileInfo.ignored) {
+      return content;
+    }
+
+    // Resolve the Prettier config for this file path (including overrides).
+    const options = await prettier.resolveConfig(path, { editorconfig: true });
+    return prettier.format(content, { ...options, filepath: path });
+  },
 };
 
 module.exports = config;

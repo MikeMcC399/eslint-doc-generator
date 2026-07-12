@@ -105,6 +105,24 @@ describe('createEndOfLineResolver', function () {
       ).toStrictEqual('\r\n');
     });
 
+    it('treats unsupported values like "cr" as unset', async function () {
+      fixture = await setupFixture({
+        fixture: 'esm-base',
+        overrides: {
+          '.editorconfig': `
+                root = true
+
+                [*]
+                end_of_line = cr`,
+        },
+      });
+
+      const eol = createEndOfLineResolver();
+      expect(
+        await eol.getExplicitEndOfLine(join(fixture.path, 'README.md')),
+      ).toBeUndefined();
+    });
+
     it('respects the .md specific end of line settings when ".editorconfig" is configured', async function () {
       fixture = await setupFixture({
         fixture: 'esm-base',

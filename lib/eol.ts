@@ -89,13 +89,15 @@ async function getEndOfLineFromEditorConfig(
  * Returns undefined if the contents have no line breaks.
  */
 export function detectEndOfLine(contents: string): EndOfLine | undefined {
-  const crlfCount = contents.match(/\r\n/gu)?.length ?? 0;
-  const lfCount = contents.match(/(?<!\r)\n/gu)?.length ?? 0;
+  const crlfCount = contents.split('\r\n').length - 1;
+  // All LFs minus those that are part of a CRLF.
+  const lfCount = contents.split('\n').length - 1 - crlfCount;
 
   if (crlfCount === 0 && lfCount === 0) {
     return undefined;
   }
 
+  // A tie favors LF.
   return crlfCount > lfCount ? '\r\n' : '\n';
 }
 

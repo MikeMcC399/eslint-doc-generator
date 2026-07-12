@@ -174,8 +174,7 @@ export async function generate(path: string, userOptions?: GenerateOptions) {
     }
 
     const isRuleDocMdx = isMdx(pathToDoc);
-    const contentsOldBuffer = await readFile(pathToDoc);
-    const contentsOld = contentsOldBuffer.toString();
+    const contentsOld = await readFile(pathToDoc, 'utf8');
 
     // Normalize to LF for processing; restore this file's end of line before write.
     const endOfLine = await endOfLineResolver.resolve(pathToDoc, contentsOld);
